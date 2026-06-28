@@ -1,4 +1,4 @@
-from datetime import datetime
+﻿from datetime import datetime
 
 from sqlalchemy import DateTime, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
@@ -13,6 +13,7 @@ class CollectorRun(Base):
 
     # 记录采集执行情况，便于后续排查失败和统计执行结果。
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    batch_id: Mapped[str] = mapped_column(String(64), index=True)
     collector_name: Mapped[str] = mapped_column(String(100), index=True)
     status: Mapped[str] = mapped_column(String(20), index=True)
     message: Mapped[str | None] = mapped_column(Text, nullable=True)

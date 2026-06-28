@@ -1,4 +1,4 @@
-from datetime import datetime
+﻿from datetime import datetime
 
 from sqlalchemy import DateTime, Integer, JSON, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
@@ -13,6 +13,7 @@ class RawHotspot(Base):
 
     # 保存采集器返回的原始热点结果，方便后续追溯和重跑。
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    batch_id: Mapped[str] = mapped_column(String(64), index=True)
     source_platform: Mapped[str] = mapped_column(String(100), index=True)
     source_channel: Mapped[str] = mapped_column(String(100), index=True)
     title: Mapped[str] = mapped_column(String(500), index=True)
@@ -32,6 +33,7 @@ class StandardHotspot(Base):
 
     # 保存统一对象结构，供阶段二和阶段三继续消费。
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    batch_id: Mapped[str] = mapped_column(String(64), index=True)
     raw_hotspot_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
     title: Mapped[str] = mapped_column(String(500), index=True)
     summary: Mapped[str | None] = mapped_column(Text, nullable=True)

@@ -1,14 +1,13 @@
-from app.collectors.crawl4ai import Crawl4AICollector
+﻿from app.collectors.crawl4ai import Crawl4AICollector
 from app.collectors.daily_hot import DailyHotCollector
 from app.collectors.rsshub import RSSHubCollector
-from app.db.base import Base
-from app.db.session import engine
+from app.db.init_db import init_db
 
 
 def run_collectors_once() -> None:
     """执行一次所有已注册采集器。"""
     # 先确保本地数据库表存在，便于后续任务直接落盘。
-    Base.metadata.create_all(bind=engine)
+    init_db()
 
     collectors = [
         DailyHotCollector(),
