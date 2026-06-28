@@ -4,8 +4,10 @@ from app.schemas.hotspot import HotspotItem
 
 
 class BaseCollector(ABC):
+    """采集器抽象基类。"""
+
     name: str
 
     @abstractmethod
     def collect(self) -> list[HotspotItem]:
-        """Collect hotspot items from a source."""
+        """采集热点并返回标准对象列表。"""

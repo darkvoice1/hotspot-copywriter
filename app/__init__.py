@@ -1,1 +1,1 @@
-"""Application package for hotspot collection and copywriting."""
+"""应用主入口包。"""

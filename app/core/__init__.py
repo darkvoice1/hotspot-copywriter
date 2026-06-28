@@ -1,1 +1,1 @@
-"""Core settings and shared application helpers."""
+"""核心配置与共享能力。"""

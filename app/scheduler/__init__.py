@@ -1,1 +1,1 @@
-"""Scheduling and runner helpers."""
+"""调度与执行入口。"""

@@ -7,6 +7,8 @@ BASE_DIR = Path(__file__).resolve().parents[2]
 
 
 class Settings(BaseSettings):
+    """应用配置定义。"""
+
     app_name: str = "Hotspot Copywriter"
     database_url: str = f"sqlite:///{BASE_DIR / 'data' / 'hotspot.db'}"
 

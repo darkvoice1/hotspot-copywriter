@@ -7,8 +7,11 @@ from app.db.base import Base
 
 
 class RawHotspot(Base):
+    """原始热点数据表。"""
+
     __tablename__ = "raw_hotspots"
 
+    # 保存采集器返回的原始热点结果，方便后续追溯和重跑。
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     source_platform: Mapped[str] = mapped_column(String(100), index=True)
     source_channel: Mapped[str] = mapped_column(String(100), index=True)
@@ -23,8 +26,11 @@ class RawHotspot(Base):
 
 
 class StandardHotspot(Base):
+    """标准化后的热点数据表。"""
+
     __tablename__ = "standard_hotspots"
 
+    # 保存统一对象结构，供阶段二和阶段三继续消费。
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     raw_hotspot_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
     title: Mapped[str] = mapped_column(String(500), index=True)

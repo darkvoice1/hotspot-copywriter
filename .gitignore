@@ -10,6 +10,7 @@ venv/
 # Local docs
 /开发任务/
 /*.md
+/external/
 
 # Local data
 data/*.db

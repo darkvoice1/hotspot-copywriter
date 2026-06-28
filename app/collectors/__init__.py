@@ -1,1 +1,1 @@
-"""Collector implementations."""
+"""采集器实现包。"""
