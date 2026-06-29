@@ -1,4 +1,4 @@
-from pathlib import Path
+﻿from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -11,6 +11,7 @@ class Settings(BaseSettings):
 
     app_name: str = "Hotspot Copywriter"
     database_url: str = f"sqlite:///{BASE_DIR / 'data' / 'hotspot.db'}"
+    collector_timeout_seconds: float = 10.0
 
     model_config = SettingsConfigDict(
         env_file=".env",

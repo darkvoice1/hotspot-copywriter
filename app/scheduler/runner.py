@@ -1,7 +1,9 @@
 ﻿from app.collectors.crawl4ai import Crawl4AICollector
-from app.collectors.daily_hot import DailyHotCollector
+from app.collectors.daily_hot import WeiboHotCollector
 from app.collectors.rsshub import RSSHubCollector
 from app.db.init_db import init_db
+from app.db.session import SessionLocal
+from app.services.hotspot_service import save_standard_hotspot
 
 
 def run_collectors_once() -> None:
@@ -10,11 +12,16 @@ def run_collectors_once() -> None:
     init_db()
 
     collectors = [
-        DailyHotCollector(),
+        WeiboHotCollector(),
         RSSHubCollector(),
         Crawl4AICollector(),
     ]
 
-    # 依次执行采集器，当前阶段先验证主链路结构可用。
-    for collector in collectors:
-        collector.collect()
+    with SessionLocal() as session:
+        for collector in collectors:
+            for item in collector.collect():
+                save_standard_hotspot(
+                    session=session,
+                    item=item,
+                    batch_id="manual-run",
+                )
