@@ -1,4 +1,4 @@
-from datetime import datetime
+﻿from datetime import UTC, datetime
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -45,7 +45,7 @@ class HotspotItem(BaseModel):
         description="来源提供的原始发布时间，阶段一允许为空。",
     )
     fetched_at: datetime = Field(
-        default_factory=datetime.utcnow,
+        default_factory=lambda: datetime.now(UTC),
         description="系统采集时间。",
     )
     region: str = Field(
