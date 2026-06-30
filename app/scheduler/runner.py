@@ -8,6 +8,7 @@ from app.collectors.daily_hot import WeiboHotCollector
 from app.collectors.rsshub import RSSHubCollector
 from app.db.init_db import init_db
 from app.db.session import SessionLocal
+from app.models.run_log import CollectorRun
 from app.services.hotspot_service import save_standard_hotspot
 
 
@@ -25,10 +26,15 @@ class CollectorRunResult:
         """判断当前采集器是否执行成功。"""
         return self.error_message is None
 
+    @property
+    def status(self) -> str:
+        """返回适合落库保存的执行状态。"""
+        return "success" if self.succeeded else "failed"
+
 
 @dataclass(frozen=True)
 class CollectorsRunSummary:
-    """一次手动采集任务的汇总结果。"""
+    """一次采集任务的汇总结果。"""
 
     batch_id: str
     started_at: datetime
@@ -51,10 +57,20 @@ class CollectorsRunSummary:
         return sum(1 for result in self.results if not result.succeeded)
 
 
+def build_batch_id(prefix: str = "manual") -> str:
+    """生成一次采集任务的批次号。"""
+    timestamp = datetime.now(UTC).strftime("%Y%m%d%H%M%S")
+    return f"{prefix}-{timestamp}-{uuid4().hex[:8]}"
+
+
 def build_manual_batch_id() -> str:
     """生成一次手动采集任务的批次号。"""
-    timestamp = datetime.now(UTC).strftime("%Y%m%d%H%M%S")
-    return f"manual-{timestamp}-{uuid4().hex[:8]}"
+    return build_batch_id("manual")
+
+
+def build_scheduled_batch_id() -> str:
+    """生成一次定时采集任务的批次号。"""
+    return build_batch_id("scheduled")
 
 
 def get_default_collectors() -> list[BaseCollector]:
@@ -91,20 +107,25 @@ def run_collectors_once(
                     )
                     saved_count += 1
 
-                results.append(
-                    CollectorRunResult(
-                        collector_name=collector.name,
-                        collected_count=len(items),
-                        saved_count=saved_count,
-                    )
+                result = CollectorRunResult(
+                    collector_name=collector.name,
+                    collected_count=len(items),
+                    saved_count=saved_count,
                 )
             except Exception as exc:
-                results.append(
-                    CollectorRunResult(
-                        collector_name=collector.name,
-                        error_message=str(exc),
-                    )
+                result = CollectorRunResult(
+                    collector_name=collector.name,
+                    error_message=str(exc),
                 )
+
+            results.append(result)
+            _save_collector_run(
+                session=session,
+                batch_id=current_batch_id,
+                result=result,
+                started_at=started_at,
+                finished_at=datetime.now(UTC),
+            )
 
     return CollectorsRunSummary(
         batch_id=current_batch_id,
@@ -112,3 +133,31 @@ def run_collectors_once(
         finished_at=datetime.now(UTC),
         results=results,
     )
+
+
+def run_scheduled_collectors_once() -> CollectorsRunSummary:
+    """执行一次定时采集任务。"""
+    return run_collectors_once(batch_id=build_scheduled_batch_id())
+
+
+def _save_collector_run(
+    session,
+    batch_id: str,
+    result: CollectorRunResult,
+    started_at: datetime,
+    finished_at: datetime,
+) -> CollectorRun:
+    """保存单个采集器的运行记录。"""
+    run_log = CollectorRun(
+        batch_id=batch_id,
+        collector_name=result.collector_name,
+        status=result.status,
+        message=result.error_message,
+        started_at=started_at,
+        finished_at=finished_at,
+        item_count=result.saved_count,
+    )
+    session.add(run_log)
+    session.commit()
+    session.refresh(run_log)
+    return run_log

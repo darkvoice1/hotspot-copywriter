@@ -1,13 +1,14 @@
 ﻿import typer
 
 from app.db.init_db import init_db
+from app.scheduler.jobs import DEFAULT_DAILY_COLLECT_HOUR, start_daily_collect_scheduler
 from app.scheduler.runner import CollectorsRunSummary, run_collectors_once
 
 app = typer.Typer(help="Hotspot collection project CLI")
 
 
 def _print_collect_summary(summary: CollectorsRunSummary) -> None:
-    """打印一次手动采集任务的执行摘要。"""
+    """打印一次采集任务的执行摘要。"""
     typer.echo(f"批次号: {summary.batch_id}")
     typer.echo(f"采集器数量: {len(summary.results)}")
     typer.echo(f"采集热点数: {summary.total_collected_count}")
@@ -29,6 +30,16 @@ def collect() -> None:
     """手动执行一次热点采集流程。"""
     summary = run_collectors_once()
     _print_collect_summary(summary)
+
+
+@app.command()
+def schedule(
+    hour: int = typer.Option(DEFAULT_DAILY_COLLECT_HOUR, help="每天执行采集的小时，按北京时间计算。"),
+    minute: int = typer.Option(0, help="每天执行采集的分钟，按北京时间计算。"),
+) -> None:
+    """启动每日定时热点采集任务。"""
+    typer.echo(f"每日热点采集调度已启动，将在北京时间 {hour:02d}:{minute:02d} 执行。")
+    start_daily_collect_scheduler(hour=hour, minute=minute)
 
 
 @app.command("init-db")

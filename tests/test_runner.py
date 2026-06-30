@@ -5,7 +5,8 @@ from sqlalchemy import select
 from app.collectors.base import BaseCollector
 from app.db.session import SessionLocal
 from app.models.hotspot import StandardHotspot
-from app.scheduler.runner import run_collectors_once
+from app.models.run_log import CollectorRun
+from app.scheduler.runner import run_collectors_once, run_scheduled_collectors_once
 from app.schemas.hotspot import HotspotItem
 
 
@@ -58,17 +59,54 @@ def test_run_collectors_once_returns_summary_and_saves_items() -> None:
     assert records[0].title == "手动入口测试热点"
 
 
+def test_run_collectors_once_records_success_run_log() -> None:
+    """验证成功采集器会保存运行记录。"""
+    batch_id = f"manual-run-log-test-{uuid4().hex}"
+
+    run_collectors_once(
+        collectors=[FakeSuccessCollector()],
+        batch_id=batch_id,
+    )
+
+    with SessionLocal() as session:
+        run_logs = session.scalars(
+            select(CollectorRun).where(CollectorRun.batch_id == batch_id)
+        ).all()
+
+    assert len(run_logs) == 1
+    assert run_logs[0].collector_name == "fake_success"
+    assert run_logs[0].status == "success"
+    assert run_logs[0].item_count == 1
+    assert run_logs[0].message is None
+    assert run_logs[0].finished_at is not None
+
+
 def test_run_collectors_once_records_failed_collector() -> None:
     """验证单个采集器失败时入口会记录错误并继续返回摘要。"""
+    batch_id = f"manual-failed-test-batch-{uuid4().hex}"
+
     summary = run_collectors_once(
         collectors=[FakeFailedCollector()],
-        batch_id=f"manual-failed-test-batch-{uuid4().hex}",
+        batch_id=batch_id,
     )
+
+    with SessionLocal() as session:
+        run_logs = session.scalars(
+            select(CollectorRun).where(CollectorRun.batch_id == batch_id)
+        ).all()
 
     assert summary.total_collected_count == 0
     assert summary.total_saved_count == 0
     assert summary.failed_count == 1
     assert summary.results[0].collector_name == "fake_failed"
     assert summary.results[0].error_message == "模拟采集失败"
+    assert len(run_logs) == 1
+    assert run_logs[0].status == "failed"
+    assert run_logs[0].message == "模拟采集失败"
 
 
+def test_run_scheduled_collectors_once_uses_scheduled_batch_prefix() -> None:
+    """验证定时采集入口会使用定时任务批次前缀。"""
+    summary = run_scheduled_collectors_once()
+
+    assert summary.batch_id.startswith("scheduled-")
