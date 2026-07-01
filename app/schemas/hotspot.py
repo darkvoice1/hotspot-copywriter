@@ -1,6 +1,9 @@
 ﻿from datetime import UTC, datetime
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+from app.models.hotspot import StandardHotspot
 
 
 class HotspotItem(BaseModel):
@@ -103,3 +106,29 @@ class HotspotItem(BaseModel):
     def required_stage_one_fields(cls) -> tuple[str, ...]:
         """返回阶段一标准对象的必填字段列表。"""
         return ("title", "source_platform", "source_channel")
+
+
+class StandardHotspotResponse(BaseModel):
+    """标准热点接口响应结构。"""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    batch_id: str
+    title: str
+    summary: str | None = None
+    source_platform: str
+    source_channel: str
+    source_url: str | None = None
+    rank: int | None = None
+    score: str | None = None
+    published_at: datetime | None = None
+    fetched_at: datetime
+    region: str
+    language: str
+    raw_payload: dict[str, Any] | None = None
+
+    @classmethod
+    def from_model(cls, hotspot: StandardHotspot) -> "StandardHotspotResponse":
+        """从标准热点 ORM 对象构建响应对象。"""
+        return cls.model_validate(hotspot)

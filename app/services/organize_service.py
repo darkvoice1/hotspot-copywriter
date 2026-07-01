@@ -4,6 +4,8 @@ from dataclasses import dataclass, field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.db.init_db import init_db
+from app.db.session import SessionLocal
 from app.models.hotspot import StandardHotspot
 from app.models.organized_hotspot import OrganizedHotspot
 from app.schemas.organized_hotspot import OrganizedHotspotItem
@@ -110,6 +112,13 @@ def list_organized_hotspots_by_batch(session: Session, batch_id: str) -> list[Or
         .order_by(OrganizedHotspot.id)
     )
     return list(session.scalars(statement).all())
+
+
+def list_organized_hotspots_by_batch_id(batch_id: str) -> list[OrganizedHotspot]:
+    """按批次读取阶段二整理结果并自行管理数据库会话。"""
+    init_db()
+    with SessionLocal() as session:
+        return list_organized_hotspots_by_batch(session=session, batch_id=batch_id)
 
 
 def _select_representative_hotspot(hotspots: list[StandardHotspot]) -> StandardHotspot:

@@ -1,4 +1,8 @@
-﻿from pydantic import BaseModel, ConfigDict, Field, field_validator
+﻿from datetime import datetime
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+from app.models.organized_hotspot import OrganizedHotspot
 
 
 class OrganizedHotspotItem(BaseModel):
@@ -60,3 +64,27 @@ class OrganizedHotspotItem(BaseModel):
             if normalized_item and normalized_item not in normalized_items:
                 normalized_items.append(normalized_item)
         return normalized_items
+
+
+class OrganizedHotspotResponse(BaseModel):
+    """阶段二整理结果接口响应结构。"""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    batch_id: str
+    topic_title: str
+    representative_hotspot_id: int
+    source_hotspot_ids: list[int]
+    source_platforms: list[str]
+    category: str | None = None
+    tags: list[str] = Field(default_factory=list)
+    summary: str | None = None
+    organize_version: str
+    created_at: datetime
+    updated_at: datetime
+
+    @classmethod
+    def from_model(cls, hotspot: OrganizedHotspot) -> "OrganizedHotspotResponse":
+        """从整理结果 ORM 对象构建响应对象。"""
+        return cls.model_validate(hotspot)

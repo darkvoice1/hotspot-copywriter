@@ -1,6 +1,8 @@
 ﻿from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.db.init_db import init_db
+from app.db.session import SessionLocal
 from app.models.hotspot import StandardHotspot
 from app.schemas.hotspot import HotspotItem
 
@@ -54,3 +56,10 @@ def list_standard_hotspots_by_batch(session: Session, batch_id: str) -> list[Sta
         .order_by(StandardHotspot.rank.is_(None), StandardHotspot.rank, StandardHotspot.id)
     )
     return list(session.scalars(statement).all())
+
+
+def list_standard_hotspots_by_batch_id(batch_id: str) -> list[StandardHotspot]:
+    """按批次读取标准热点记录并自行管理数据库会话。"""
+    init_db()
+    with SessionLocal() as session:
+        return list_standard_hotspots_by_batch(session=session, batch_id=batch_id)
