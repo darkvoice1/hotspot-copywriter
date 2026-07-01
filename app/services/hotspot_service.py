@@ -1,4 +1,5 @@
-﻿from sqlalchemy.orm import Session
+﻿from sqlalchemy import select
+from sqlalchemy.orm import Session
 
 from app.models.hotspot import StandardHotspot
 from app.schemas.hotspot import HotspotItem
@@ -43,3 +44,13 @@ def save_standard_hotspot(
 def get_standard_hotspot(session: Session, hotspot_id: int) -> StandardHotspot | None:
     """按 ID 读取标准热点记录。"""
     return session.get(StandardHotspot, hotspot_id)
+
+
+def list_standard_hotspots_by_batch(session: Session, batch_id: str) -> list[StandardHotspot]:
+    """按批次读取标准热点记录。"""
+    statement = (
+        select(StandardHotspot)
+        .where(StandardHotspot.batch_id == batch_id)
+        .order_by(StandardHotspot.rank.is_(None), StandardHotspot.rank, StandardHotspot.id)
+    )
+    return list(session.scalars(statement).all())
