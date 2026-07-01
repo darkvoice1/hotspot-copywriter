@@ -5,4 +5,9 @@ def test_init_db_returns_expected_tables() -> None:
     """验证数据库初始化后返回预期表名。"""
     table_names = init_db()
 
-    assert table_names == ["collector_runs", "raw_hotspots", "standard_hotspots"]
+    assert table_names == [
+        "collector_runs",
+        "organized_hotspots",
+        "raw_hotspots",
+        "standard_hotspots",
+    ]

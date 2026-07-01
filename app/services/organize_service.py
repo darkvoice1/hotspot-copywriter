@@ -1,9 +1,12 @@
 ﻿import re
 from dataclasses import dataclass, field
 
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models.hotspot import StandardHotspot
+from app.models.organized_hotspot import OrganizedHotspot
+from app.schemas.organized_hotspot import OrganizedHotspotItem
 from app.services.hotspot_service import list_standard_hotspots_by_batch
 
 
@@ -66,6 +69,47 @@ def deduplicate_hotspots_by_batch(session: Session, batch_id: str) -> list[Dedup
     """按批次读取标准热点并输出清洗去重结果。"""
     hotspots = list_standard_hotspots_by_batch(session=session, batch_id=batch_id)
     return deduplicate_hotspots(hotspots)
+
+
+def normalize_organized_hotspot(item: OrganizedHotspotItem) -> OrganizedHotspotItem:
+    """按统一 schema 再校验一次整理结果对象。"""
+    return OrganizedHotspotItem.model_validate(item.model_dump())
+
+
+def save_organized_hotspot(session: Session, item: OrganizedHotspotItem) -> OrganizedHotspot:
+    """保存阶段二整理结果并返回数据库记录。"""
+    normalized_item = normalize_organized_hotspot(item)
+    organized_hotspot = OrganizedHotspot(
+        batch_id=normalized_item.batch_id,
+        topic_title=normalized_item.topic_title,
+        representative_hotspot_id=normalized_item.representative_hotspot_id,
+        source_hotspot_ids=normalized_item.source_hotspot_ids,
+        source_platforms=normalized_item.source_platforms,
+        category=normalized_item.category,
+        tags=normalized_item.tags,
+        summary=normalized_item.summary,
+        organize_version=normalized_item.organize_version,
+    )
+
+    session.add(organized_hotspot)
+    session.commit()
+    session.refresh(organized_hotspot)
+    return organized_hotspot
+
+
+def get_organized_hotspot(session: Session, organized_hotspot_id: int) -> OrganizedHotspot | None:
+    """按 ID 读取阶段二整理结果。"""
+    return session.get(OrganizedHotspot, organized_hotspot_id)
+
+
+def list_organized_hotspots_by_batch(session: Session, batch_id: str) -> list[OrganizedHotspot]:
+    """按批次读取阶段二整理结果。"""
+    statement = (
+        select(OrganizedHotspot)
+        .where(OrganizedHotspot.batch_id == batch_id)
+        .order_by(OrganizedHotspot.id)
+    )
+    return list(session.scalars(statement).all())
 
 
 def _select_representative_hotspot(hotspots: list[StandardHotspot]) -> StandardHotspot:

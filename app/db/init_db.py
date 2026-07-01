@@ -3,13 +3,14 @@
 from app.db.base import Base
 from app.db.session import engine
 from app.models.hotspot import RawHotspot, StandardHotspot
+from app.models.organized_hotspot import OrganizedHotspot
 from app.models.run_log import CollectorRun
 
 
 def init_db() -> list[str]:
     """初始化数据库表结构并返回当前表名列表。"""
     # 提前引用模型，确保 SQLAlchemy 元数据中已经注册所有表。
-    _ = (RawHotspot, StandardHotspot, CollectorRun)
+    _ = (RawHotspot, StandardHotspot, CollectorRun, OrganizedHotspot)
 
     Base.metadata.create_all(bind=engine)
     return get_table_names()
